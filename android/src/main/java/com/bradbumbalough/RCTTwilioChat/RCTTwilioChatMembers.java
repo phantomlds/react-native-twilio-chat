@@ -19,6 +19,8 @@ import com.twilio.chat.Members;
 import com.twilio.chat.CallbackListener;
 import com.twilio.chat.Channel;
 import com.twilio.chat.Paginator;
+import com.twilio.chat.User;
+import com.twilio.chat.UserDescriptor;
 
 import java.sql.Array;
 import java.util.ArrayList;
@@ -72,6 +74,7 @@ public class RCTTwilioChatMembers extends ReactContextBaseJavaModule {
                     // https://media.twiliocdn.com/sdk/android/chat/releases/1.0.0/docs/com/twilio/chat/Members.html#getMembersList--
                     // Carl Olivier from Twilio team said this change will be addressed soon, so
                     // this code is temporary
+
                     List<Member> membersArr = members.getMembersList();
                     WritableArray memberItems = Arguments.createArray();
                     for(Member m : membersArr) {
@@ -174,6 +177,64 @@ public class RCTTwilioChatMembers extends ReactContextBaseJavaModule {
                     @Override
                     public void onSuccess() {
                         promise.resolve(true);
+                    }
+                });
+            }
+        });
+    }
+
+    @ReactMethod
+    public void userDescriptor(String channelSid, final String identity, final Promise promise){
+        loadMembersFromChannelSid(channelSid, new CallbackListener<Members>() {
+            @Override
+            public void onError(ErrorInfo errorInfo) {
+                super.onError(errorInfo);
+                promise.reject("get-members-error","Error occurred while attempting to get members on channel.");
+            }
+
+            @Override
+            public void onSuccess(Members members) {
+                Member member = members.getMember(identity);
+                member.getUserDescriptor(new CallbackListener<UserDescriptor>() {
+
+                    @Override
+                    public void onError(ErrorInfo errorInfo) {
+                        super.onError(errorInfo);
+                        promise.reject("get-user-descriptor","Error occurred while attempting to get user descriptions.");
+                    }
+
+                    @Override
+                    public void onSuccess(final UserDescriptor userDescriptor) {
+                        promise.resolve(RCTConvert.UserDescriptor(userDescriptor));
+                    }
+                });
+            }
+        });
+    }
+
+    @ReactMethod
+    public void subscribedUser(String channelSid, final String identity, final Promise promise){
+        loadMembersFromChannelSid(channelSid, new CallbackListener<Members>() {
+            @Override
+            public void onError(ErrorInfo errorInfo) {
+                super.onError(errorInfo);
+                promise.reject("get-members-error","Error occurred while attempting to get members on channel.");
+            }
+
+            @Override
+            public void onSuccess(Members members) {
+                Member member = members.getMember(identity);
+                member.getAndSubscribeUser(new CallbackListener<User>() {
+
+                    @Override
+                    public void onError(ErrorInfo errorInfo) {
+                        super.onError(errorInfo);
+                        promise.reject("get-user","Error occurred while attempting to get user.");
+                    }
+
+                    @Override
+                    public void onSuccess(User user) {
+                        promise.resolve(RCTConvert.User(user));
                     }
                 });
             }
